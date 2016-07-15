@@ -1,6 +1,6 @@
 # Personal Capital
 
-Personal Capital library
+Personal Capital library for accessing its API
 
 # Usage
 
