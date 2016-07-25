@@ -3,6 +3,7 @@ import getpass
 import json
 import logging
 import os
+from datetime import datetime, timedelta
 
 class PewCapital(PersonalCapital):
     """
@@ -54,10 +55,29 @@ def main():
         pc.two_factor_authenticate(TwoFactorVerificationModeEnum.SMS, raw_input('code: '))
         pc.authenticate_password(password)
 
-    accountsResponse = pc.fetch('/newaccount/getAccounts')
+    accounts_response = pc.fetch('/newaccount/getAccounts')
+    
+    now = datetime.now()
+    date_format = '%Y-%m-%d'
+    days = 90
+    start_date = (now - (timedelta(days=days+1))).strftime(date_format)
+    end_date = (now - (timedelta(days=1))).strftime(date_format)
+    transactions_response = pc.fetch('/transaction/getUserTransactions', {
+        'sort_cols': 'transactionTime',
+        'sort_rev': 'true',
+        'page': '0',
+        'rows_per_page': '100',
+        'startDate': start_date,
+        'endDate': end_date,
+        'component': 'DATAGRID'
+    })
     pc.save_session()
 
-    print('Networth', accountsResponse.json()['spData']['networth'])
+    accounts = accounts_response.json()['spData']
+    print('Networth: {0}'.format(accounts['networth']))
+
+    transactions = transactions_response.json()['spData']
+    print('Number of transactions between {0} and {1}: {2}'.format(transactions['startDate'], transactions['endDate'], len(transactions['transactions'])))
 
 if __name__ == '__main__':
     main()

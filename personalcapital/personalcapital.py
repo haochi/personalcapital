@@ -58,16 +58,19 @@ class PersonalCapital(object):
         elif mode == TwoFactorVerificationModeEnum.EMAIL:
             self.__challenge_email()
 
-    def fetch(self, endpoint):
+    def fetch(self, endpoint, data = None):
         """
         for getting data after logged in
         """
-        data = {
+        payload = {
             "lastServerChangeId": "-1",
             "csrf": self.__csrf,
             "apiClient": "WEB"
         }
-        return self.post(endpoint, data)
+        if data is not None:
+            payload.update(data)
+
+        return self.post(endpoint, payload)
 
     def post(self, endpoint, data):
         response = self.__session.post(api_endpoint + endpoint, data)
