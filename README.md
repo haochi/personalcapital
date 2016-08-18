@@ -2,6 +2,26 @@
 
 Python library for accessing Personal Capital data
 
+# Installation
+
+## With Pip
+
+`pip install requests`
+
+## With Source Code
+
+You can get the source code by cloning it from Github:
+
+`git clone https://github.com/haochi/personalcapital.git`
+
+or get the tarball:
+
+`curl -OJL https://github.com/haochi/personalcapital/tarball/master`
+
+then either include the library into your code, or install it with:
+
+`python setup.py install`
+
 # Usage
 
 You need to first create an instance.
