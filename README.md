@@ -45,10 +45,31 @@ print('Networth', accounts_response.json()['spData']['networth'])
 
 To avoid two factor authentication every time you run the script, you can use `get_session()` to store your session somewhere and `set_session(session)` to re-use the session.
 
+Here's the entire thing.
+
+```python
+from personalcapital import PersonalCapital, RequireTwoFactorException, TwoFactorVerificationModeEnum
+
+pc = PersonalCapital()
+
+email, password = "email@domain.tld", "password"
+
+try:
+    pc.login(email, password)
+except RequireTwoFactorException:
+    pc.two_factor_challenge(TwoFactorVerificationModeEnum.SMS)
+    pc.two_factor_authenticate(TwoFactorVerificationModeEnum.SMS, raw_input('code: '))
+    pc.authenticate_password(password)
+
+accounts_response = pc.fetch('/newaccount/getAccounts')
+accounts = accounts_response.json()['spData']
+
+print('Networth: {0}'.format(accounts['networth']))
+```
 
 # Example
 
-See `main.py` for example.
+See `main.py` for an example script.
 
 To run it, simply run `python main.py`.
 
