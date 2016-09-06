@@ -56,19 +56,19 @@ class PersonalCapital(object):
             raise LoginFailedException()
 
     def authenticate_password(self, password):
-        self.__authenticate_password(password)
+        return self.__authenticate_password(password)
 
     def two_factor_authenticate(self, mode, code):
         if mode == TwoFactorVerificationModeEnum.SMS:
-            self.__authenticate_sms(code)
+            return self.__authenticate_sms(code)
         elif mode == TwoFactorVerificationModeEnum.EMAIL:
-            self.__authenticate_email(code)
+            return self.__authenticate_email(code)
 
     def two_factor_challenge(self, mode):
         if mode == TwoFactorVerificationModeEnum.SMS:
-            self.__challenge_sms()
+            return self.__challenge_sms()
         elif mode == TwoFactorVerificationModeEnum.EMAIL:
-            self.__challenge_email()
+            return self.__challenge_email()
 
     def fetch(self, endpoint, data = None):
         """
