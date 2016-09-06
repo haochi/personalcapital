@@ -9,11 +9,18 @@ SP_HEADER_KEY = "spHeader"
 SUCCESS_KEY = "success"
 CSRF_KEY = "csrf"
 AUTH_LEVEL_KEY = "authLevel"
+ERRORS_KEY = "errors"
 
 def getSpHeaderValue(result, valueKey):
     if (SP_HEADER_KEY in result) and (valueKey in result[SP_HEADER_KEY]):
         return result[SP_HEADER_KEY][valueKey]
     return None
+
+def getErrorValue(result):
+    try:
+        return getSpHeaderValue(result, ERRORS_KEY)[0]['message']
+    except (ValueError, IndexError):
+        return None
 
 class AuthLevelEnum(object):
     USER_REMEMBERED = "USER_REMEMBERED"
@@ -24,6 +31,9 @@ class TwoFactorVerificationModeEnum(object):
     EMAIL = 2
 
 class RequireTwoFactorException(Exception):
+    pass
+
+class LoginFailedException(Exception):
     pass
 
 class PersonalCapital(object):
@@ -39,9 +49,11 @@ class PersonalCapital(object):
             self.__csrf = csrf
             if auth_level != AuthLevelEnum.USER_REMEMBERED:
                 raise RequireTwoFactorException()
-            self.__authenticate_password(password)
+            result = self.__authenticate_password(password).json()
+            if getSpHeaderValue(result, SUCCESS_KEY) == False:
+                raise LoginFailedException(getErrorValue(result))
         else:
-            raise Exception()
+            raise LoginFailedException()
 
     def authenticate_password(self, password):
         self.__authenticate_password(password)
