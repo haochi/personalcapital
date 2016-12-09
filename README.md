@@ -6,7 +6,7 @@ Python library for accessing Personal Capital data
 
 ## With Pip
 
-`pip install requests`
+`pip install personalcapital`
 
 ## With Source Code
 
