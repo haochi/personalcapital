@@ -5,6 +5,10 @@ import logging
 import os
 from datetime import datetime, timedelta
 
+# Python 2 and 3 compatibility
+if hasattr(__builtins__, 'raw_input'):
+    input = raw_input
+
 class PewCapital(PersonalCapital):
     """
     Extends PersonalCapital to save and load session
@@ -34,7 +38,7 @@ def get_email():
     email = os.getenv('PEW_EMAIL')
     if not email:
         print('You can set the environment variables for PEW_EMAIL and PEW_PASSWORD so the prompts don\'t come up every time')
-        return raw_input('Enter email:')
+        return input('Enter email:')
     return email
 
 def get_password():
@@ -52,7 +56,7 @@ def main():
         pc.login(email, password)
     except RequireTwoFactorException:
         pc.two_factor_challenge(TwoFactorVerificationModeEnum.SMS)
-        pc.two_factor_authenticate(TwoFactorVerificationModeEnum.SMS, raw_input('code: '))
+        pc.two_factor_authenticate(TwoFactorVerificationModeEnum.SMS, input('code: '))
         pc.authenticate_password(password)
 
     accounts_response = pc.fetch('/newaccount/getAccounts')
