@@ -162,7 +162,7 @@ class PersonalCapital(object):
 
     def __authenticate_email(self, code):
         data = self.__generate_authentication_payload(code)
-        return self.post("/credential/authenticateEmail", data)
+        return self.post("/credential/authenticateEmailByCode", data)
 
     def __challenge_sms(self):
         data = self.__generate_challenge_payload("challengeSMS")
