@@ -47,7 +47,7 @@ pc.two_factor_challenge(mode)
 Then you need to finish the two factor challenge by verifying the code and continue the login process.
 
 ```python
-pc.two_factor_authenticate(mode, raw_input('code'))
+pc.two_factor_authenticate(mode, 'code')
 pc.authenticate_password(password)
 ```
 
@@ -78,7 +78,7 @@ try:
     pc.login(email, password)
 except RequireTwoFactorException:
     pc.two_factor_challenge(TwoFactorVerificationModeEnum.SMS)
-    pc.two_factor_authenticate(TwoFactorVerificationModeEnum.SMS, raw_input('code: '))
+    pc.two_factor_authenticate(TwoFactorVerificationModeEnum.SMS, 'verification code')
     pc.authenticate_password(password)
 
 accounts_response = pc.fetch('/newaccount/getAccounts')
