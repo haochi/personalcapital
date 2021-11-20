@@ -1,7 +1,8 @@
+import cloudscraper
 import requests
 import re
 
-csrf_regexp = re.compile(r"globals.csrf='([a-f0-9-]+)'")
+csrf_regexp = re.compile(r"window.csrf ='([a-f0-9-]+)'")
 base_url = 'https://home.personalcapital.com'
 api_endpoint = base_url + '/api'
 
@@ -38,7 +39,7 @@ class LoginFailedException(Exception):
 
 class PersonalCapital(object):
     def __init__(self):
-        self.__session = requests.Session()
+        self.__session = cloudscraper.create_scraper()
         self.__csrf = ""
 
     def login(self, username, password):
@@ -49,14 +50,14 @@ class PersonalCapital(object):
             self.__csrf = csrf
             if auth_level != AuthLevelEnum.USER_REMEMBERED:
                 raise RequireTwoFactorException()
-            result = self.__authenticate_password(password).json()
+            result = self.__authenticate_password(username, password).json()
             if getSpHeaderValue(result, SUCCESS_KEY) == False:
                 raise LoginFailedException(getErrorValue(result))
         else:
             raise LoginFailedException()
 
-    def authenticate_password(self, password):
-        return self.__authenticate_password(password)
+    def authenticate_password(self, username, password):
+        self.__authenticate_password(username, password)
 
     def two_factor_authenticate(self, mode, code):
         if mode == TwoFactorVerificationModeEnum.SMS:
@@ -172,7 +173,7 @@ class PersonalCapital(object):
         data = self.__generate_authentication_payload(code)
         return self.post("/credential/authenticateSms", data)
 
-    def __authenticate_password(self, passwd):
+    def __authenticate_password(self, username, passwd):
         data = {
             "bindDevice": "true",
             "deviceName": "",
@@ -180,6 +181,7 @@ class PersonalCapital(object):
             "skipFirstUse": "",
             "skipLinkAccount": "false",
             "referrerId": "",
+            "username": username,
             "passwd": passwd,
             "apiClient": "WEB",
             "csrf": self.__csrf
