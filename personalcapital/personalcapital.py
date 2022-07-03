@@ -1,8 +1,10 @@
 import requests
 import re
 
-csrf_regexp = re.compile(r"globals.csrf='([a-f0-9-]+)'")
+csrf_regexp = re.compile(r"window.csrf ='([a-f0-9-]+)'")
+user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36'
 base_url = 'https://home.personalcapital.com'
+ident_endpoint = base_url + '/page/login/goHome'
 api_endpoint = base_url + '/api'
 
 SP_HEADER_KEY = "spHeader"
@@ -39,11 +41,16 @@ class LoginFailedException(Exception):
 class PersonalCapital(object):
     def __init__(self):
         self.__session = requests.Session()
+        self.__session.headers.update({'user-agent': user_agent})
         self.__csrf = ""
 
     def login(self, username, password):
-        initial_csrf = self.__get_csrf_from_home_page(base_url)
+        initial_csrf = self.__get_csrf_from_home_page(ident_endpoint)
+        if initial_csrf is None:
+          LoginFailedException("Unable to extract initial CSRF token")
         csrf, auth_level = self.__identify_user(username, initial_csrf)
+        if csrf is None or auth_level is None:
+          LoginFailedException("Unable to extract CSRF token and/or user auth level")
 
         if csrf and auth_level:
             self.__csrf = csrf
@@ -175,7 +182,7 @@ class PersonalCapital(object):
     def __authenticate_password(self, passwd):
         data = {
             "bindDevice": "true",
-            "deviceName": "",
+            "deviceName": "Personal Capital Python API",
             "redirectTo": "",
             "skipFirstUse": "",
             "skipLinkAccount": "false",
