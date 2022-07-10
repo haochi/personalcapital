@@ -1,3 +1,4 @@
+import pickle
 import requests
 import re
 
@@ -50,7 +51,7 @@ class PersonalCapital(object):
           LoginFailedException("Unable to extract initial CSRF token")
         csrf, auth_level = self.__identify_user(username, initial_csrf)
         if csrf is None or auth_level is None:
-          LoginFailedException("Unable to extract CSRF token and/or user auth level")
+          LoginFailedException("Unable to extract CSRF token and user auth level")
 
         if csrf and auth_level:
             self.__csrf = csrf
@@ -107,9 +108,23 @@ class PersonalCapital(object):
         """
         self.__session.cookies = requests.utils.cookiejar_from_dict(cookies)
 
+    def save_session(self, filename):
+      session_data = {
+          "csrf": self.__csrf,
+          "cookies": self.__session.cookies._cookies, 
+      }
+      with open(filename, 'wb') as fh:
+        pickle.dump(session_data, fh) 
+        
+    def load_session(self, filename):
+      with open(filename, 'rb') as fh:
+        data = pickle.load(fh) 
+        jar = requests.cookies.RequestsCookieJar() 
+        jar._cookies = data["cookies"]
+        self.__session.cookies = jar
+        self.__csrf = data["csrf"]
+
     # private methods
-
-
     def __get_csrf_from_home_page(self, url):
         r = self.__session.get(url)
         found_csrf = csrf_regexp.search(r.text)
@@ -192,3 +207,4 @@ class PersonalCapital(object):
             "csrf": self.__csrf
         }
         return self.post("/credential/authenticatePassword", data)
+        
