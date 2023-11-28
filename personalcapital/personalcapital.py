@@ -1,8 +1,11 @@
+import pickle
 import requests
 import re
 
-csrf_regexp = re.compile(r"globals.csrf='([a-f0-9-]+)'")
+csrf_regexp = re.compile(r"window.csrf ='([a-f0-9-]+)'")
+user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.0.0 Safari/537.36'
 base_url = 'https://home.personalcapital.com'
+ident_endpoint = base_url + '/page/login/goHome'
 api_endpoint = base_url + '/api'
 
 SP_HEADER_KEY = "spHeader"
@@ -24,6 +27,7 @@ def getErrorValue(result):
 
 class AuthLevelEnum(object):
     USER_REMEMBERED = "USER_REMEMBERED"
+    MFA_REQUIRED = "MFA_REQUIRED"
 
 class TwoFactorVerificationModeEnum(object):
     SMS = 0
@@ -39,11 +43,16 @@ class LoginFailedException(Exception):
 class PersonalCapital(object):
     def __init__(self):
         self.__session = requests.Session()
+        self.__session.headers.update({'user-agent': user_agent})
         self.__csrf = ""
 
     def login(self, username, password):
-        initial_csrf = self.__get_csrf_from_home_page(base_url)
+        initial_csrf = self.__get_csrf_from_home_page(ident_endpoint)
+        if initial_csrf is None:
+          LoginFailedException("Unable to extract initial CSRF token")
         csrf, auth_level = self.__identify_user(username, initial_csrf)
+        if csrf is None or auth_level is None:
+          LoginFailedException("Unable to extract CSRF token and user auth level")
 
         if csrf and auth_level:
             self.__csrf = csrf
@@ -52,6 +61,8 @@ class PersonalCapital(object):
             result = self.__authenticate_password(password).json()
             if getSpHeaderValue(result, SUCCESS_KEY) == False:
                 raise LoginFailedException(getErrorValue(result))
+            elif getSpHeaderValue(result, AUTH_LEVEL_KEY) == AuthLevelEnum.MFA_REQUIRED:
+                raise RequireTwoFactorException()
         else:
             raise LoginFailedException()
 
@@ -100,9 +111,23 @@ class PersonalCapital(object):
         """
         self.__session.cookies = requests.utils.cookiejar_from_dict(cookies)
 
+    def save_session(self, filename):
+      session_data = {
+          "csrf": self.__csrf,
+          "cookies": self.__session.cookies._cookies, 
+      }
+      with open(filename, 'wb') as fh:
+        pickle.dump(session_data, fh) 
+        
+    def load_session(self, filename):
+      with open(filename, 'rb') as fh:
+        data = pickle.load(fh) 
+        jar = requests.cookies.RequestsCookieJar() 
+        jar._cookies = data["cookies"]
+        self.__session.cookies = jar
+        self.__csrf = data["csrf"]
+
     # private methods
-
-
     def __get_csrf_from_home_page(self, url):
         r = self.__session.get(url)
         found_csrf = csrf_regexp.search(r.text)
@@ -175,7 +200,7 @@ class PersonalCapital(object):
     def __authenticate_password(self, passwd):
         data = {
             "bindDevice": "true",
-            "deviceName": "",
+            "deviceName": "Personal Capital Python API",
             "redirectTo": "",
             "skipFirstUse": "",
             "skipLinkAccount": "false",
@@ -185,3 +210,4 @@ class PersonalCapital(object):
             "csrf": self.__csrf
         }
         return self.post("/credential/authenticatePassword", data)
+        
