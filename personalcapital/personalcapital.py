@@ -27,6 +27,7 @@ def getErrorValue(result):
 
 class AuthLevelEnum(object):
     USER_REMEMBERED = "USER_REMEMBERED"
+    MFA_REQUIRED = "MFA_REQUIRED"
 
 class TwoFactorVerificationModeEnum(object):
     SMS = 0
@@ -60,6 +61,8 @@ class PersonalCapital(object):
             result = self.__authenticate_password(password).json()
             if getSpHeaderValue(result, SUCCESS_KEY) == False:
                 raise LoginFailedException(getErrorValue(result))
+            elif getSpHeaderValue(result, AUTH_LEVEL_KEY) == AuthLevelEnum.MFA_REQUIRED:
+                raise RequireTwoFactorException()
         else:
             raise LoginFailedException()
 
